@@ -1,15 +1,9 @@
 #include <SDL.h>
 #include <SDL_error.h>
 #include <SDL_events.h>
-#include <SDL_render.h>
-#include <SDL_video.h>
-#include <imgui.h>
+
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
-
-#include <queue>
-#include <vector>
-#include <omp.h>
 
 #include "MeasurementsLog.cpp"
 #include "Forest.cpp"

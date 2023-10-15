@@ -1,5 +1,9 @@
 #include <iostream>
 #include <random>
+#include <queue>
+#include <vector>
+
+#include <omp.h>
 
 const int SIZE = 1;
 const int WIDTH = 1024;

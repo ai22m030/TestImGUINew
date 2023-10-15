@@ -1,3 +1,7 @@
+#include <SDL_render.h>
+#include <SDL_video.h>
+#include <imgui.h>
+
 void createWindow() {
     auto windowFlags = (SDL_WindowFlags) (SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     window = SDL_CreateWindow("Forest fire", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
