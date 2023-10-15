@@ -38,7 +38,15 @@ struct MeasurementsLog {
 
         ImGui::Separator();
 
-        if (ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
+        ImGui::TextDisabled("FPS: %.2f  | ", fps);
+        ImGui::SameLine();
+        ImGui::TextDisabled("Average FPS: %.2f  | ", avg);
+        ImGui::SameLine();
+        ImGui::TextDisabled("Perf: %lld", framePerf);
+
+        ImGui::Separator();
+
+        if (ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysAutoResize)) {
             if (clear)
                 Clear();
             if (copy)
@@ -69,6 +77,10 @@ struct MeasurementsLog {
         ImGui::EndChild();
         ImGui::End();
     }
+
+public:
+    float fps{}, avg{};
+    unsigned long long framePerf{};
 };
 
 static MeasurementsLog measurements;

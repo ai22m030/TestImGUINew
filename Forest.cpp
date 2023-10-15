@@ -11,7 +11,10 @@ const int HEIGHT = 1024;
 
 const double START_GROWTH = 0.5;
 const float BASE_FIRE = 0.0001;
-const float BASE_GROWTH = 0.02;
+const float BASE_GROWTH = 0.03;
+
+const bool SPEED_CONTROL = false;
+const float FPS_LIMIT = 15.0f;
 
 enum CellState {
     TREE, FIRE, EMPTY
@@ -46,11 +49,16 @@ int currentSize{SIZE};
 int currentWidth{WIDTH};
 int currentHeight{HEIGHT};
 
+float currentSpeed{FPS_LIMIT};
+bool limitAnimation{SPEED_CONTROL};
+
+unsigned int lastFrame, lastUpdate;
+
 ImVec4 clearColor{ImVec4(0.94f, 0.94f, 0.94f, 1.00f)};
 
 std::vector<std::vector<CellState>> forest(currentWidth, std::vector<CellState>(currentHeight, EMPTY));
 
-int num_steps[] = {1, 10, 100, 1000, 10000}; // array to hold different step values
+int numSteps[] = {1, 10, 100, 1000, 10000}; // array to hold different step values
 std::priority_queue<int, std::vector<int>, std::greater<>> measureSteps;
 
 void initForest() {
@@ -98,27 +106,30 @@ void stepForest(double p, double g) {
 
     // Prepare RNGs for each thread
     int max_threads = omp_get_max_threads();
-    std::vector<std::mt19937> randomGens(max_threads);
+    std::vector<std::mt19937> randomGens;
+    std::random_device rd;
+
     for (int i = 0; i < max_threads; ++i) {
-        randomGens[i].seed(std::chrono::high_resolution_clock::now().time_since_epoch().count() + i);
+        randomGens.emplace_back(rd());
     }
+
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
 #pragma omp parallel for collapse(2) default(none) shared(forest, newForest, currentLogic, p, g, randomGens, currentWidth, currentHeight) private(dist)
     for (int x = 0; x < currentWidth; ++x) {
         for (int y = 0; y < currentHeight; ++y) {
-            std::mt19937 &rng_local = randomGens[omp_get_thread_num()];
+            std::mt19937 &rngLocal = randomGens[omp_get_thread_num()];
 
             if (forest[x][y] == FIRE) {
                 newForest[x][y] = EMPTY;
             } else if (forest[x][y] == TREE) {
                 bool fireNearby = isFireNearby(x, y, currentLogic);
 
-                if (fireNearby || dist(rng_local) < p) {
+                if (fireNearby || dist(rngLocal) < p) {
                     newForest[x][y] = FIRE;
                 }
             } else if (forest[x][y] == EMPTY) {
-                if (dist(rng_local) < g) {
+                if (dist(rngLocal) < g) {
                     newForest[x][y] = TREE;
                 }
             }

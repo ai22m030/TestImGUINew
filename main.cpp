@@ -9,13 +9,15 @@
 #include "Forest.cpp"
 #include "GUI.cpp"
 
-
 int main(int, char **) {
     int lastHeight = currentHeight, lastWidth = currentWidth, lastSize = currentSize;
+    bool calculateForest = true;
     auto start = std::chrono::high_resolution_clock::now();
+    lastFrame = 0;
+    lastUpdate = SDL_GetTicks();
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
-        printf("Error: %s\n", SDL_GetError());
+        SDL_Log("Error: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
 
@@ -38,7 +40,12 @@ int main(int, char **) {
     ImGui_ImplSDLRenderer2_Init(renderer);
 
     // Main loop
+    unsigned int totalFrameTicks = 0;
+    unsigned int totalFrames = 0;
     while (running) {
+        totalFrames++;
+        Uint32 startTicks = SDL_GetTicks();
+        Uint64 startPerf = SDL_GetPerformanceCounter();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL2_ProcessEvent(&event);
@@ -86,7 +93,7 @@ int main(int, char **) {
         }
 
         if (measurementWindow) {
-            ImGui::SetNextWindowSize(ImVec2(400, 250));
+            ImGui::SetNextWindowSize(ImVec2(400, 300));
 
             ImGui::Begin("Measurements", &measurementWindow);
 
@@ -97,10 +104,10 @@ int main(int, char **) {
                 if (ImGui::SmallButton("Start")) {
                     if (!startMeasure) {
                         start = std::chrono::high_resolution_clock::now();
-                        measureSteps = std::priority_queue<int, std::vector<int>, std::greater<>>(num_steps,
-                                                                                                  num_steps +
-                                                                                                  sizeof(num_steps) /
-                                                                                                  sizeof(num_steps[0]));
+                        measureSteps = std::priority_queue<int, std::vector<int>, std::greater<>>(numSteps,
+                                                                                                  numSteps +
+                                                                                                  sizeof(numSteps) /
+                                                                                                  sizeof(numSteps[0]));
                         startMeasure = true;
                         nextSteps();
                         measurements.AddLog("[%s] Measurement started!\n", "info");
@@ -127,7 +134,13 @@ int main(int, char **) {
             measurements.Draw("Measurements", &measurementWindow);
         }
 
-        stepForest(fire, growth);
+        if (!limitAnimation)
+            calculateForest = true;
+
+        if (calculateForest) {
+            stepForest(fire, growth);
+            calculateForest = false;
+        }
 
         // Rendering
         ImGui::Render();
@@ -143,6 +156,25 @@ int main(int, char **) {
                 } else if (forest[i][j] == FIRE) {
                     drawSquare(i, j, {200, 0, 0, 255}); // Red for fire
                 }
+            }
+        }
+
+        // End frame timing
+        unsigned int endTicks = SDL_GetTicks();
+        unsigned long long endPerf = SDL_GetPerformanceCounter();
+
+        measurements.framePerf = endPerf - startPerf;
+        measurements.fps = 1 / (((float) endTicks - (float) startTicks) / 1000.0f);
+        totalFrameTicks += endTicks - startTicks;
+        measurements.avg = 1000.0f / ((float) totalFrameTicks / (float) totalFrames);
+
+        if (limitAnimation) {
+            float dT = ((float) endTicks - (float) lastUpdate) / 1000.0f;
+            int framesToUpdate = floor(dT / (1.0f / currentSpeed));
+            if (framesToUpdate > 0) {
+                lastFrame += framesToUpdate;
+                lastUpdate = endTicks;
+                calculateForest = true;
             }
         }
 
