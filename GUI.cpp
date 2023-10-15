@@ -4,7 +4,7 @@
 
 void createWindow() {
     auto windowFlags = (SDL_WindowFlags) (SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    window = SDL_CreateWindow("Forest fire", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    window = SDL_CreateWindow("ForestFire", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                               currentWidth * currentSize,
                               currentHeight * currentSize, windowFlags);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
@@ -74,9 +74,9 @@ void initSettings(int &lastHeight, int &lastWidth, int &lastSize) {
         if (limitAnimation) {
             ImGui::Checkbox("Limit ", &limitAnimation);
             ImGui::SameLine();
-            ImGui::SliderFloat(" FPS", &currentSpeed, 10.0f, 50.0f, "%.f");
+            ImGui::SliderFloat(" FPS", &currentSpeed, 5.0f, 50.0f, "%.f");
         } else {
-            ImGui::Checkbox("Speed Control", &limitAnimation);
+            ImGui::Checkbox(" Speed control", &limitAnimation);
         }
         ImGui::Separator();
         ImGui::End();
