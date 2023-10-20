@@ -10,11 +10,20 @@ const int WIDTH = 1024;
 const int HEIGHT = 1024;
 
 const double START_GROWTH = 0.5;
-const float BASE_FIRE = 0.0001;
-const float BASE_GROWTH = 0.03;
+const float DEFAULT_FIRE = 0.0001;
+const float Default_GROWTH = 0.03;
 
 const bool SPEED_CONTROL = false;
 const float FPS_LIMIT = 15.0f;
+
+const SDL_Color DEFAULT_TREE_COLOR = {0, 128, 0, 255};
+const SDL_Color DEFAULT_FIRE_COLOR = {200, 0, 0, 255};
+
+const ImVec4 RESET_TREE_COLOR = {(float) DEFAULT_TREE_COLOR.r, (float) DEFAULT_TREE_COLOR.g,
+                                 (float) DEFAULT_TREE_COLOR.b, (float) DEFAULT_TREE_COLOR.a};
+const ImVec4 RESET_FIRE_COLOR = {(float) DEFAULT_FIRE_COLOR.r, (float) DEFAULT_FIRE_COLOR.g,
+                                 (float) DEFAULT_FIRE_COLOR.b, (float) DEFAULT_FIRE_COLOR.a};
+
 
 enum CellState {
     TREE, FIRE, EMPTY
@@ -35,6 +44,7 @@ bool startMeasure{false};
 
 bool settingsWindow{false};
 bool measurementWindow{false};
+bool colorWindow{false};
 
 int currentStep{0};
 int maxSteps{0};
@@ -42,8 +52,8 @@ int maxSteps{0};
 float progressAllSteps(11111.0);
 float progressCurrentStep{0.0};
 
-float fire{BASE_FIRE};
-float growth{BASE_GROWTH};
+float fire{DEFAULT_FIRE};
+float growth{Default_GROWTH};
 
 int currentSize{SIZE};
 int currentWidth{WIDTH};
@@ -51,6 +61,9 @@ int currentHeight{HEIGHT};
 
 float currentSpeed{FPS_LIMIT};
 bool limitAnimation{SPEED_CONTROL};
+
+bool stepwiseAnimation{SPEED_CONTROL};
+bool animationStep{SPEED_CONTROL};
 
 unsigned int lastFrame, lastUpdate;
 
@@ -66,11 +79,9 @@ void initForest() {
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
 #pragma omp parallel for collapse(2) default(none) shared(forest, START_GROWTH, currentWidth, currentHeight) private(dist, rng_init)
-    for (int i = 0; i < currentWidth; ++i) {
-        for (int j = 0; j < currentHeight; ++j) {
+    for (int i = 0; i < currentWidth; ++i)
+        for (int j = 0; j < currentHeight; ++j)
             forest[i][j] = (dist(rng_init) < START_GROWTH) ? TREE : EMPTY;
-        }
-    }
 }
 
 
@@ -90,9 +101,8 @@ bool isFireNearby(int x, int y, NeighborhoodLogic logic) {
     }
 
     // If Moore neighborhood is not selected, or we found fire in Von Neumann neighborhood, no need to check further.
-    if (logic == VON_NEUMANN) {
+    if (logic == VON_NEUMANN)
         return false;
-    }
 
     // Moore neighborhood: also consider diagonals
     return (x > 0 && y > 0 && forest[x - 1][y - 1] == FIRE) ||
@@ -109,9 +119,8 @@ void stepForest(double p, double g) {
     std::vector<std::mt19937> randomGens;
     std::random_device rd;
 
-    for (int i = 0; i < max_threads; ++i) {
+    for (int i = 0; i < max_threads; ++i)
         randomGens.emplace_back(rd());
-    }
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
@@ -137,19 +146,6 @@ void stepForest(double p, double g) {
     }
 
     forest = newForest;
-}
-
-void stopSimulation() {
-    running = false;
-}
-
-void resetSimulation() {
-    fire = BASE_FIRE;
-    growth = BASE_GROWTH;
-    currentSize = SIZE;
-    currentWidth = WIDTH;
-    currentHeight = HEIGHT;
-    initForest();
 }
 
 void resetMeasure() {

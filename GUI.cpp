@@ -13,17 +13,18 @@ void createWindow() {
 void mainMenu() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Reset")) {
-                resetSimulation();
-            }
-            if (ImGui::MenuItem("Exit", "Cmd+Q")) {
-                stopSimulation();
-            }
+            if (ImGui::MenuItem("Reset"))
+                initForest();
+
+            if (ImGui::MenuItem("Exit", "Cmd+Q"))
+                running = false;
+
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("View")) {
             ImGui::MenuItem("Settings", nullptr, &settingsWindow);
             ImGui::MenuItem("Measurements", nullptr, &measurementWindow);
+            ImGui::MenuItem("Colors", nullptr, &colorWindow);
             ImGui::EndMenu();
         }
 
@@ -41,8 +42,8 @@ void initSettings(int &lastHeight, int &lastWidth, int &lastSize) {
         ImGui::SliderInt("Width", &currentWidth, 100, 1024);
         ImGui::SliderInt("Zoom", &currentSize, 1, 5);
 
-        ImGui::SliderFloat("Spontaneous fire", &fire, 0.0f, 0.01f, "%.4f");
-        ImGui::SliderFloat("Tree growth", &growth, 0.0f, 0.2f, "%.3f");
+        ImGui::SliderFloat("Spontaneous fire", &fire, 0.0f, 0.005f, "%.4f");
+        ImGui::SliderFloat("Tree growth", &growth, 0.0f, 0.3f, "%.3f");
 
         const char *items[] = {"Von Neumann", "Moore"};
         static const char *currentItem = items[0];
@@ -67,18 +68,34 @@ void initSettings(int &lastHeight, int &lastWidth, int &lastSize) {
                 else if ((items[1] == currentItem) && (currentLogic == VON_NEUMANN))
                     currentLogic = MOORE;
             }
+
             ImGui::EndCombo();
         }
 
         ImGui::Separator();
-        if (limitAnimation) {
+
+        if (limitAnimation && !stepwiseAnimation) {
             ImGui::Checkbox("Limit ", &limitAnimation);
             ImGui::SameLine();
-            ImGui::SliderFloat(" FPS", &currentSpeed, 5.0f, 50.0f, "%.f");
-        } else {
+            ImGui::SliderFloat(" FPS", &currentSpeed, 1.0f, 50.0f, "%.f");
+        } else if (!stepwiseAnimation) {
             ImGui::Checkbox(" Speed control", &limitAnimation);
         }
-        ImGui::Separator();
+
+        if (!stepwiseAnimation)
+            ImGui::Separator();
+
+        if (stepwiseAnimation && !limitAnimation) {
+            ImGui::Checkbox(" Step animation", &stepwiseAnimation);
+            ImGui::SameLine();
+
+            if (!animationStep)
+                if (ImGui::Button("Make step"))
+                    animationStep = true;
+        } else if (!limitAnimation) {
+            ImGui::Checkbox(" Step animation", &stepwiseAnimation);
+        }
+
         ImGui::End();
     }
 }

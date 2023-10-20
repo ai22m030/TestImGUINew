@@ -10,9 +10,12 @@
 #include "GUI.cpp"
 
 int main(int, char **) {
-    int lastHeight = currentHeight, lastWidth = currentWidth, lastSize = currentSize;
-    bool calculateForest = true;
+    auto treeColor = DEFAULT_TREE_COLOR;
+    auto fireColor = DEFAULT_FIRE_COLOR;
+    auto calculateForest = true;
+    auto lastHeight = currentHeight, lastWidth = currentWidth, lastSize = currentSize;
     auto start = std::chrono::high_resolution_clock::now();
+
     lastFrame = 0;
     lastUpdate = SDL_GetTicks();
 
@@ -50,10 +53,10 @@ int main(int, char **) {
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
-                stopSimulation();
+                running = false;
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE &&
                 event.window.windowID == SDL_GetWindowID(window))
-                stopSimulation();
+                running = false;
             if (event.type == SDL_MOUSEBUTTONDOWN)
                 if (event.button.button == SDL_BUTTON_LEFT) {
                     int x, y;
@@ -62,11 +65,9 @@ int main(int, char **) {
                     int gridX = x / currentSize;
                     int gridY = y / currentSize;
 
-                    if (gridX >= 0 && gridX < currentWidth && gridY >= 0 && gridY < currentHeight) {
-                        if (forest[gridX][gridY] == TREE) {
+                    if (gridX >= 0 && gridX < currentWidth && gridY >= 0 && gridY < currentHeight)
+                        if (forest[gridX][gridY] == TREE)
                             forest[gridX][gridY] = FIRE;
-                        }
-                    }
                 }
         }
 
@@ -101,6 +102,7 @@ int main(int, char **) {
                 ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 128, 0, 255));
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(0, 100, 0, 255));
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(0, 90, 0, 255));
+
                 if (ImGui::SmallButton("Start")) {
                     if (!startMeasure) {
                         start = std::chrono::high_resolution_clock::now();
@@ -120,10 +122,12 @@ int main(int, char **) {
                 ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(128, 0, 0, 255));
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(100, 0, 0, 255));
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(90, 0, 0, 255));
+
                 if (ImGui::SmallButton("Stop")) {
                     resetMeasure();
                     measurements.AddLog("[%s] Measurement aborted!\n", "warn");
                 }
+
                 ImGui::PopStyleColor(3);
                 ImGui::SameLine();
 
@@ -134,8 +138,51 @@ int main(int, char **) {
             measurements.Draw("Measurements", &measurementWindow);
         }
 
+        if (colorWindow) {
+            static ImVec4 pickerTreeColor{(float) treeColor.r, (float) treeColor.g, (float) treeColor.b,
+                                          (float) treeColor.a};
+            static ImVec4 pickerFireColor{(float) fireColor.r, (float) fireColor.g, (float) fireColor.b,
+                                          (float) fireColor.a};
+
+            ImGui::SetNextWindowSize(ImVec2(0, 0));
+            ImGui::Begin("Colors", &colorWindow);
+            ImGui::SetNextItemWidth(100);
+
+            if (ImGui::ColorPicker4("Tree", (float *) &pickerTreeColor,
+                                    ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoInputs,
+                                    (float *) &RESET_TREE_COLOR))
+                treeColor = {(unsigned char) (pickerTreeColor.x * 255.0), (unsigned char) (pickerTreeColor.y * 255.0),
+                             (unsigned char) (pickerTreeColor.z * 255.0), DEFAULT_TREE_COLOR.a};
+
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(100);
+
+            if (ImGui::ColorPicker4("Fire", (float *) &pickerFireColor,
+                                    ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoInputs,
+                                    (float *) &RESET_FIRE_COLOR))
+                fireColor = {(unsigned char) (pickerFireColor.x * 255.0), (unsigned char) (pickerFireColor.y * 255.0),
+                             (unsigned char) (pickerFireColor.z * 255.0), DEFAULT_FIRE_COLOR.a};
+
+
+            if (ImGui::Button("Reset colors")) {
+                treeColor = DEFAULT_TREE_COLOR;
+                fireColor = DEFAULT_FIRE_COLOR;
+
+                pickerTreeColor = {(float) treeColor.r, (float) treeColor.g, (float) treeColor.b,
+                                   (float) treeColor.a};
+                pickerFireColor = {(float) fireColor.r, (float) fireColor.g, (float) fireColor.b,
+                                   (float) fireColor.a};
+
+            }
+
+            ImGui::End();
+        }
+
         if (!limitAnimation)
             calculateForest = true;
+
+        if (stepwiseAnimation && !animationStep)
+            calculateForest = false;
 
         if (calculateForest) {
             stepForest(fire, growth);
@@ -149,15 +196,12 @@ int main(int, char **) {
                                (Uint8) (clearColor.z * 255), (Uint8) (clearColor.w * 255));
         SDL_RenderClear(renderer);
 
-        for (int i = 0; i < currentWidth; ++i) {
-            for (int j = 0; j < currentHeight; ++j) {
-                if (forest[i][j] == TREE) {
-                    drawSquare(i, j, {0, 128, 0, 255}); // Green for tree
-                } else if (forest[i][j] == FIRE) {
-                    drawSquare(i, j, {200, 0, 0, 255}); // Red for fire
-                }
-            }
-        }
+        for (int i = 0; i < currentWidth; ++i)
+            for (int j = 0; j < currentHeight; ++j)
+                if (forest[i][j] == TREE)
+                    drawSquare(i, j, treeColor); // Green for tree
+                else if (forest[i][j] == FIRE)
+                    drawSquare(i, j, fireColor); // Red for fire
 
         // End frame timing
         unsigned int endTicks = SDL_GetTicks();
@@ -185,6 +229,9 @@ int main(int, char **) {
             currentStep++;
             progressCurrentStep++;
         }
+
+        if (animationStep)
+            animationStep = false;
     }
 
     // Cleanup
