@@ -75,9 +75,9 @@ void initSettings(int &lastHeight, int &lastWidth, int &lastSize) {
         ImGui::Separator();
 
         if (limitAnimation && !stepwiseAnimation) {
-            ImGui::Checkbox("Limit ", &limitAnimation);
+            ImGui::Checkbox(" Limit ", &limitAnimation);
             ImGui::SameLine();
-            ImGui::SliderFloat(" FPS", &currentSpeed, 1.0f, 50.0f, "%.f");
+            ImGui::SliderFloat(" FPS", &currentSpeed, 5.0f, 50.0f, "%.f");
         } else if (!stepwiseAnimation) {
             ImGui::Checkbox(" Speed control", &limitAnimation);
         }
@@ -86,14 +86,14 @@ void initSettings(int &lastHeight, int &lastWidth, int &lastSize) {
             ImGui::Separator();
 
         if (stepwiseAnimation && !limitAnimation) {
-            ImGui::Checkbox(" Step animation", &stepwiseAnimation);
+            ImGui::Checkbox(" Step-by-step", &stepwiseAnimation);
             ImGui::SameLine();
 
             if (!animationStep)
                 if (ImGui::Button("Make step"))
                     animationStep = true;
         } else if (!limitAnimation) {
-            ImGui::Checkbox(" Step animation", &stepwiseAnimation);
+            ImGui::Checkbox(" Step-by-step", &stepwiseAnimation);
         }
 
         ImGui::End();

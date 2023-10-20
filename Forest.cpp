@@ -11,7 +11,7 @@ const int HEIGHT = 1024;
 
 const double START_GROWTH = 0.5;
 const float DEFAULT_FIRE = 0.0001;
-const float Default_GROWTH = 0.03;
+const float DEFAULT_GROWTH = 0.03;
 
 const bool SPEED_CONTROL = false;
 const bool STEP_ANIMATION = false;
@@ -24,10 +24,11 @@ const SDL_Color DEFAULT_FIRE_COLOR = {200, 0, 0, 255};
 
 const int MEASUREMENT_STEPS[] = {1, 10, 100, 1000, 10000};
 
-const ImVec4 RESET_TREE_COLOR = {(float) DEFAULT_TREE_COLOR.r, (float) DEFAULT_TREE_COLOR.g,
-                                 (float) DEFAULT_TREE_COLOR.b, (float) DEFAULT_TREE_COLOR.a};
-const ImVec4 RESET_FIRE_COLOR = {(float) DEFAULT_FIRE_COLOR.r, (float) DEFAULT_FIRE_COLOR.g,
-                                 (float) DEFAULT_FIRE_COLOR.b, (float) DEFAULT_FIRE_COLOR.a};
+const ImVec4 RESET_TREE_COLOR = {static_cast<float>(DEFAULT_TREE_COLOR.r / 255.0), static_cast<float>(DEFAULT_TREE_COLOR.g / 255.0),
+                                 static_cast<float>(DEFAULT_TREE_COLOR.b / 255.0), static_cast<float>(DEFAULT_TREE_COLOR.a / 255.0)};
+
+const ImVec4 RESET_FIRE_COLOR = {static_cast<float>(DEFAULT_FIRE_COLOR.r / 255.0), static_cast<float>(DEFAULT_FIRE_COLOR.g / 255.0),
+                                 static_cast<float>(DEFAULT_FIRE_COLOR.b / 255.0), static_cast<float>(DEFAULT_FIRE_COLOR.a / 255.0)};
 
 enum CellState {
     TREE, FIRE, EMPTY
@@ -38,10 +39,10 @@ enum NeighborhoodLogic {
     VON_NEUMANN
 };
 
-NeighborhoodLogic currentLogic{VON_NEUMANN};
-
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
+
+NeighborhoodLogic currentLogic{VON_NEUMANN};
 
 bool running{true};
 bool startMeasure{false};
@@ -57,7 +58,7 @@ float progressAllSteps(11111.0);
 float progressCurrentStep{0.0};
 
 float fire{DEFAULT_FIRE};
-float growth{Default_GROWTH};
+float growth{DEFAULT_GROWTH};
 
 int currentSize{SIZE};
 int currentWidth{WIDTH};
@@ -78,13 +79,13 @@ std::vector<std::vector<CellState>> forest(currentWidth, std::vector<CellState>(
 std::priority_queue<int, std::vector<int>, std::greater<>> measureSteps;
 
 void initForest() {
-    std::mt19937 rng_init(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::mt19937 initRng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-#pragma omp parallel for collapse(2) default(none) shared(forest, START_GROWTH, currentWidth, currentHeight) private(dist, rng_init)
+#pragma omp parallel for collapse(2) default(none) shared(forest, START_GROWTH, currentWidth, currentHeight) private(dist, initRng)
     for (int i = 0; i < currentWidth; ++i)
         for (int j = 0; j < currentHeight; ++j)
-            forest[i][j] = (dist(rng_init) < START_GROWTH) ? TREE : EMPTY;
+            forest[i][j] = (dist(initRng) < START_GROWTH) ? TREE : EMPTY;
 }
 
 
@@ -117,11 +118,11 @@ void stepForest(double p, double g) {
     std::vector<std::vector<CellState>> newForest = forest;
 
     // Prepare RNGs for each thread
-    int max_threads = omp_get_max_threads();
+    auto maxThreads = omp_get_max_threads();
     std::vector<std::mt19937> randomGens;
     std::random_device rd;
 
-    for (int i = 0; i < max_threads; ++i)
+    for (int i = 0; i < maxThreads; ++i)
         randomGens.emplace_back(rd());
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);

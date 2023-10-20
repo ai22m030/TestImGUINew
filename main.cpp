@@ -62,8 +62,7 @@ int main(int, char **) {
                     int x, y;
                     SDL_GetMouseState(&x, &y);
 
-                    int gridX = x / currentSize;
-                    int gridY = y / currentSize;
+                    auto gridX = x / currentSize, gridY = y / currentSize;
 
                     if (gridX >= 0 && gridX < currentWidth && gridY >= 0 && gridY < currentHeight)
                         if (forest[gridX][gridY] == TREE)
@@ -139,10 +138,14 @@ int main(int, char **) {
         }
 
         if (colorWindow) {
-            static ImVec4 pickerTreeColor{(float) treeColor.r, (float) treeColor.g, (float) treeColor.b,
-                                          (float) treeColor.a};
-            static ImVec4 pickerFireColor{(float) fireColor.r, (float) fireColor.g, (float) fireColor.b,
-                                          (float) fireColor.a};
+            static ImVec4 pickerTreeColor{static_cast<float>(treeColor.r / 255.0),
+                                          static_cast<float>(treeColor.g / 255.0),
+                                          static_cast<float>(treeColor.b / 255.0),
+                                          static_cast<float>(treeColor.a / 255.0)};
+            static ImVec4 pickerFireColor{static_cast<float>(fireColor.r / 255.0),
+                                          static_cast<float>(fireColor.g / 255.0),
+                                          static_cast<float>(fireColor.b / 255.0),
+                                          static_cast<float>(fireColor.a / 255.0)};
 
             ImGui::SetNextWindowSize(ImVec2(0, 0));
             ImGui::Begin("Colors", &colorWindow);
@@ -162,18 +165,6 @@ int main(int, char **) {
                                     (float *) &RESET_FIRE_COLOR))
                 fireColor = {(unsigned char) (pickerFireColor.x * 255.0), (unsigned char) (pickerFireColor.y * 255.0),
                              (unsigned char) (pickerFireColor.z * 255.0), DEFAULT_FIRE_COLOR.a};
-
-
-            if (ImGui::Button("Reset colors")) {
-                treeColor = DEFAULT_TREE_COLOR;
-                fireColor = DEFAULT_FIRE_COLOR;
-
-                pickerTreeColor = {(float) treeColor.r, (float) treeColor.g, (float) treeColor.b,
-                                   (float) treeColor.a};
-                pickerFireColor = {(float) fireColor.r, (float) fireColor.g, (float) fireColor.b,
-                                   (float) fireColor.a};
-
-            }
 
             ImGui::End();
         }
@@ -206,8 +197,8 @@ int main(int, char **) {
                     drawSquare(i, j, fireColor); // Red for fire
 
         // End frame timing
-        unsigned int endTicks = SDL_GetTicks();
-        unsigned long long endPerf = SDL_GetPerformanceCounter();
+        auto endTicks = SDL_GetTicks();
+        auto endPerf = SDL_GetPerformanceCounter();
 
         measurements.framePerf = endPerf - startPerf;
         measurements.fps = 1 / (((float) endTicks - (float) startTicks) / 1000.0f);
@@ -215,8 +206,9 @@ int main(int, char **) {
         measurements.avg = 1000.0f / ((float) totalFrameTicks / (float) totalFrames);
 
         if (limitAnimation) {
-            float dT = ((float) endTicks - (float) lastUpdate) / 1000.0f;
-            int framesToUpdate = floor(dT / (1.0f / currentSpeed));
+            auto dT = ((float) endTicks - (float) lastUpdate) / 1000.0f;
+            auto framesToUpdate = static_cast<int>(floor(dT / (1.0f / currentSpeed)));
+
             if (framesToUpdate > 0) {
                 lastFrame += framesToUpdate;
                 lastUpdate = endTicks;
