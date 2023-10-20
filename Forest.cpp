@@ -14,16 +14,20 @@ const float DEFAULT_FIRE = 0.0001;
 const float Default_GROWTH = 0.03;
 
 const bool SPEED_CONTROL = false;
+const bool STEP_ANIMATION = false;
 const float FPS_LIMIT = 15.0f;
+
+const ImVec4 CLEAR_COLOR = {0.94f, 0.94f, 0.94f, 1.00f};
 
 const SDL_Color DEFAULT_TREE_COLOR = {0, 128, 0, 255};
 const SDL_Color DEFAULT_FIRE_COLOR = {200, 0, 0, 255};
+
+const int MEASUREMENT_STEPS[] = {1, 10, 100, 1000, 10000};
 
 const ImVec4 RESET_TREE_COLOR = {(float) DEFAULT_TREE_COLOR.r, (float) DEFAULT_TREE_COLOR.g,
                                  (float) DEFAULT_TREE_COLOR.b, (float) DEFAULT_TREE_COLOR.a};
 const ImVec4 RESET_FIRE_COLOR = {(float) DEFAULT_FIRE_COLOR.r, (float) DEFAULT_FIRE_COLOR.g,
                                  (float) DEFAULT_FIRE_COLOR.b, (float) DEFAULT_FIRE_COLOR.a};
-
 
 enum CellState {
     TREE, FIRE, EMPTY
@@ -62,16 +66,15 @@ int currentHeight{HEIGHT};
 float currentSpeed{FPS_LIMIT};
 bool limitAnimation{SPEED_CONTROL};
 
-bool stepwiseAnimation{SPEED_CONTROL};
-bool animationStep{SPEED_CONTROL};
+bool stepwiseAnimation{STEP_ANIMATION};
+bool animationStep{STEP_ANIMATION};
 
 unsigned int lastFrame, lastUpdate;
 
-ImVec4 clearColor{ImVec4(0.94f, 0.94f, 0.94f, 1.00f)};
+ImVec4 clearColor{CLEAR_COLOR};
 
 std::vector<std::vector<CellState>> forest(currentWidth, std::vector<CellState>(currentHeight, EMPTY));
 
-int numSteps[] = {1, 10, 100, 1000, 10000}; // array to hold different step values
 std::priority_queue<int, std::vector<int>, std::greater<>> measureSteps;
 
 void initForest() {
@@ -96,9 +99,8 @@ bool isFireNearby(int x, int y, NeighborhoodLogic logic) {
     if ((x > 0 && forest[x - 1][y] == FIRE) ||
         (y > 0 && forest[x][y - 1] == FIRE) ||
         (x < currentWidth - 1 && forest[x + 1][y] == FIRE) ||
-        (y < currentHeight - 1 && forest[x][y + 1] == FIRE)) {
+        (y < currentHeight - 1 && forest[x][y + 1] == FIRE))
         return true;
-    }
 
     // If Moore neighborhood is not selected, or we found fire in Von Neumann neighborhood, no need to check further.
     if (logic == VON_NEUMANN)
@@ -134,13 +136,11 @@ void stepForest(double p, double g) {
             } else if (forest[x][y] == TREE) {
                 bool fireNearby = isFireNearby(x, y, currentLogic);
 
-                if (fireNearby || dist(rngLocal) < p) {
+                if (fireNearby || dist(rngLocal) < p)
                     newForest[x][y] = FIRE;
-                }
             } else if (forest[x][y] == EMPTY) {
-                if (dist(rngLocal) < g) {
+                if (dist(rngLocal) < g)
                     newForest[x][y] = TREE;
-                }
             }
         }
     }

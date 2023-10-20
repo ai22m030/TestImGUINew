@@ -106,10 +106,10 @@ int main(int, char **) {
                 if (ImGui::SmallButton("Start")) {
                     if (!startMeasure) {
                         start = std::chrono::high_resolution_clock::now();
-                        measureSteps = std::priority_queue<int, std::vector<int>, std::greater<>>(numSteps,
-                                                                                                  numSteps +
-                                                                                                  sizeof(numSteps) /
-                                                                                                  sizeof(numSteps[0]));
+                        measureSteps = std::priority_queue<int, std::vector<int>, std::greater<>>(MEASUREMENT_STEPS,
+                                                                                                  MEASUREMENT_STEPS +
+                                                                                                  sizeof(MEASUREMENT_STEPS) /
+                                                                                                  sizeof(MEASUREMENT_STEPS[0]));
                         startMeasure = true;
                         nextSteps();
                         measurements.AddLog("[%s] Measurement started!\n", "info");
@@ -191,9 +191,11 @@ int main(int, char **) {
 
         // Rendering
         ImGui::Render();
+
         SDL_RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
         SDL_SetRenderDrawColor(renderer, (Uint8) (clearColor.x * 255), (Uint8) (clearColor.y * 255),
                                (Uint8) (clearColor.z * 255), (Uint8) (clearColor.w * 255));
+
         SDL_RenderClear(renderer);
 
         for (int i = 0; i < currentWidth; ++i)
